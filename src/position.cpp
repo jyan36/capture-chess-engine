@@ -1509,4 +1509,14 @@ bool Position::pos_is_ok() const {
     return true;
 }
 
+bool Position::has_legal_capture() const {
+    MoveList<CAPTURES> legal_moves(*this);
+
+    for (Move move: legal_moves) {
+       if (pseudo_legal(move) && legal(move)) return true;
+    }
+
+    return false;
+}
+
 }  // namespace Stockfish

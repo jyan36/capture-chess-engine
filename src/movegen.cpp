@@ -297,6 +297,17 @@ Move* generate<LEGAL>(const Position& pos, Move* moveList) {
     Square   ksq    = pos.square<KING>(us);
     Move*    cur    = moveList;
 
+    // Legal capture case
+    if (pos.has_legal_capture()) {
+        Move* all_captures_end = generate<CAPTURES>(pos, moveList);
+        Move* legal_captures_end = moveList;
+        for (Move* it = moveList; it != all_captures_end; ++it) {
+            if (pos.legal(*it)) *legal_captures_end++ = *it;
+        }
+        return legal_captures_end;
+    }
+
+    // No legal captures
     moveList =
       pos.checkers() ? generate<EVASIONS>(pos, moveList) : generate<NON_EVASIONS>(pos, moveList);
     while (cur != moveList)

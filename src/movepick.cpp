@@ -99,6 +99,8 @@ MovePicker::MovePicker(const Position&              p,
     depth(d),
     ply(pl) {
 
+    skipQuiets = pos.has_legal_capture();
+    
     if (pos.checkers())
         stage = EVASION_TT + !(ttm && pos.pseudo_legal(ttm));
 
@@ -113,6 +115,9 @@ MovePicker::MovePicker(const Position& p, Move ttm, int th, const CapturePieceTo
     captureHistory(cph),
     ttMove(ttm),
     threshold(th) {
+    
+    skipQuiets = pos.has_legal_capture();
+
     assert(!pos.checkers());
 
     stage = PROBCUT_TT + !(ttm && pos.capture_stage(ttm) && pos.pseudo_legal(ttm));
