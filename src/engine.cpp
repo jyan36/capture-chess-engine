@@ -100,7 +100,7 @@ Engine::Engine(std::optional<std::string> path) :
       }));
 
     options.add(  //
-      "Ponder", Option(false));
+      "Ponder", Option(true));
 
     options.add(  //
       "MultiPV", Option(1, 1, MAX_MOVES));
