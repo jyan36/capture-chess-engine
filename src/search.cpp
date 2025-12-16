@@ -1033,28 +1033,6 @@ moves_loop:  // When in check, search starts here
         if (!pos.legal(move))
             continue;
 
-        const bool openingPhase = pos.game_ply() < 15;
-        const bool forcedCapture = pos.has_legal_capture();
-
-        if (forcedCapture && !pos.capture(move))
-            continue;
-
-        Piece moved = pos.moved_piece(move);
-        Square from = move.from_sq();
-        Square to   = move.to_sq();
-
-        if (openingPhase && moved == make_piece(pos.side_to_move(), PAWN))
-        {
-            if (file_of(from) == FILE_F)
-                continue;
-        }
-
-        if (openingPhase && moved == make_piece(pos.side_to_move(), KING))
-        {
-            if (!(forcedCapture && pos.capture(move)))
-                continue;
-        }
-
         // At root obey the "searchmoves" option and skip moves not listed in Root
         // Move List. In MultiPV mode we also skip PV moves that have been already
         // searched and those of lower "TB rank" if we are in a TB root position.
