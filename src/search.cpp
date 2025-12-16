@@ -180,6 +180,15 @@ void Search::Worker::start_searching() {
                             main_manager()->originalTimeAdjust);
     tt.new_search();
 
+    if (rootPos.game_ply() == 0 && rootPos.side_to_move() == WHITE) {
+        Move c3 = UCIEngine::to_move(rootPos, "c2c3");
+        main_manager()->updates.onBestmove(
+            UCIEngine::move(c3, rootPos.is_chess960()),
+            ""
+        );
+        return;
+    }
+
     if (rootMoves.empty())
     {
         rootMoves.emplace_back(Move::none());
@@ -644,6 +653,11 @@ Value Search::Worker::search(
     bestValue     = -VALUE_INFINITE;
     maxValue      = VALUE_INFINITE;
 
+    if (forcedCapture) {
+        ss->ttPv = false;
+        improving = false;
+    }
+
     // Check for the available remaining time
     if (is_mainthread())
         main_manager()->check_time(*this);
@@ -988,6 +1002,9 @@ moves_loop:  // When in check, search starts here
     MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
                   &pawnHistory, ss->ply);
 
+        mp.skip_quiet_moves();
+    }
+
     value = bestValue;
 
     int moveCount = 0;
@@ -1004,6 +1021,28 @@ moves_loop:  // When in check, search starts here
         // Check for legality
         if (!pos.legal(move))
             continue;
+
+        const bool openingPhase = pos.game_ply() < 15;
+        const bool forcedCapture = pos.has_legal_capture();
+
+        if (forcedCapture && !pos.capture(move))
+            continue;
+
+        Piece moved = pos.moved_piece(move);
+        Square from = move.from_sq();
+        Square to   = move.to_sq();
+
+        if (openingPhase && moved == make_piece(pos.side_to_move(), PAWN))
+        {
+            if (file_of(from) == FILE_F)
+                continue;
+        }
+
+        if (openingPhase && moved == make_piece(pos.side_to_move(), KING))
+        {
+            if (!(forcedCapture && pos.capture(move)))
+                continue;
+        }
 
         // At root obey the "searchmoves" option and skip moves not listed in Root
         // Move List. In MultiPV mode we also skip PV moves that have been already
@@ -1224,6 +1263,9 @@ moves_loop:  // When in check, search starts here
         // Step 17. Late moves reduction / extension (LMR)
         if (depth >= 2 && moveCount > 1)
         {
+            if (forcedCapture)
+                r = 0;
+
             // In general we want to cap the LMR depth search at newDepth, but when
             // reduction is negative, we allow this move a limited search extension
             // beyond the first move depth.
