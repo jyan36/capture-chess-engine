@@ -180,6 +180,21 @@ void Search::Worker::start_searching() {
                             main_manager()->originalTimeAdjust);
     tt.new_search();
 
+    if (rootPos.game_ply() == 0 && rootPos.side_to_move() == WHITE) {
+        Move c3 = UCIEngine::to_move(rootPos, "c2c3");
+        main_manager()->updates.onBestmove(
+            UCIEngine::move(c3, rootPos.is_chess960()),
+            ""
+        );
+
+        if (options["Ponder"]) {
+            threads.start_searching();
+            iterative_deepening();
+        }
+
+        return;
+    }
+
     if (rootPos.game_ply() < 18)
     {
         rootMoves.erase(
@@ -1024,10 +1039,6 @@ moves_loop:  // When in check, search starts here
 
     MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
                   &pawnHistory, ss->ply);
-
-    if (forcedCapture) {
-        mp.skip_quiet_moves();
-    }
 
     value = bestValue;
 
