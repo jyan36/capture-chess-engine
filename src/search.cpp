@@ -186,6 +186,12 @@ void Search::Worker::start_searching() {
             UCIEngine::move(c3, rootPos.is_chess960()),
             ""
         );
+
+        if (options["Ponder"]) {
+            threads.start_searching();
+            iterative_deepening();
+        }
+
         return;
     }
 
@@ -1010,6 +1016,10 @@ moves_loop:  // When in check, search starts here
 
     int moveCount = 0;
 
+    if (forcedCapture) {
+        mp.skip_quiet_moves();
+    }
+
     // Step 13. Loop through all pseudo-legal moves until no moves remain
     // or a beta cutoff occurs.
     while ((move = mp.next_move()) != Move::none())
@@ -1109,8 +1119,8 @@ moves_loop:  // When in check, search starts here
                 int margin = std::max(166 * depth + captHist / 29, 0);
 
                 if (forcedCapture)
-                    margin /= 4;
-                
+                    margin /= 6;
+
                 if ((alpha >= VALUE_DRAW || pos.non_pawn_material(us) != PieceValue[movedPiece])
                     && !pos.see_ge(move, -margin))
                     continue;
