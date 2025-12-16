@@ -180,19 +180,36 @@ void Search::Worker::start_searching() {
                             main_manager()->originalTimeAdjust);
     tt.new_search();
 
-    if (rootPos.game_ply() == 0 && rootPos.side_to_move() == WHITE) {
-        Move c3 = UCIEngine::to_move(rootPos, "c2c3");
-        main_manager()->updates.onBestmove(
-            UCIEngine::move(c3, rootPos.is_chess960()),
-            ""
-        );
+    if (rootPos.game_ply() < 18)
+    {
+        rootMoves.erase(
+            std::remove_if(
+                rootMoves.begin(),
+                rootMoves.end(),
+                [&](const RootMove& rm)
+                {
+                    Move m = rm.pv[0];
+                    if (!m.is_ok())
+                        return false;
 
-        if (options["Ponder"]) {
-            threads.start_searching();
-            iterative_deepening();
-        }
+                    if (rootPos.capture(m))
+                        return false;
 
-        return;
+                    Piece p = rootPos.piece_on(m.from_sq());
+
+                    if (type_of(p) == KING && !rootPos.checkers())
+                        return true;
+
+                    if (type_of(p) == PAWN)
+                    {
+                        File f = file_of(m.from_sq());
+                        if (f == FILE_F || f == FILE_G)
+                            return true;
+                    }
+
+                    return false;
+                }),
+            rootMoves.end());
     }
 
     if (rootMoves.empty())
