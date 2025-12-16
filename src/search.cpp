@@ -183,7 +183,7 @@ void Search::Worker::start_searching() {
     if (rootPos.game_ply() == 0 && rootPos.side_to_move() == WHITE) {
         Move c3 = UCIEngine::to_move(rootPos, "c2c3");
         main_manager()->updates.onBestmove(
-            UCIEngine::move(c3, rootPos.is_chess960()),
+            UCIEngine::move(c3),
             ""
         );
 
